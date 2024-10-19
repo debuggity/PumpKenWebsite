@@ -193,6 +193,24 @@
             z-index: 1;
         }
 
+        /* New Glow Container */
+        .section-glow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 240px;
+            pointer-events: none;
+            z-index: -1;
+            background-image: none; /* Will be set dynamically */
+        }
+
+        /* Remove the old glow effect if desired */
+        section::before {
+            content: none;
+        }
+
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .overlay-text {
@@ -222,6 +240,7 @@
 
     <!-- Welcome Section -->
     <section>
+        <div class="section-glow"></div>
         <br><br>
         <div class="content" id="content1">
             <h1>Welcome to PumpKen on Solana</h1>
@@ -279,95 +298,119 @@
             const header = document.querySelector('header');
             const headerHeight = header.offsetHeight;
             const scrollY = window.scrollY;
-
+    
             if (scrollY > headerHeight * 0.3) {
                 overlayText.classList.add('visible');
             } else {
                 overlayText.classList.remove('visible');
             }
-
+    
             // Fade in content sections
             const contents = document.querySelectorAll('.content');
             contents.forEach(content => {
                 const contentPosition = content.getBoundingClientRect().top;
                 const screenPosition = window.innerHeight / 1.3;
-
+    
                 if (contentPosition < screenPosition) {
                     content.classList.add('visible');
                 }
             });
         });
-
+    
         // Dynamic Glow Effect Based on Video Colors
         const video = document.getElementById('headerVideo');
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
-
-        // Variables for moving average
-        let rTotal = 0, gTotal = 0, bTotal = 0;
+    
+        const numSamples = 10; // Number of vertical slices
+        let rTotals = new Array(numSamples).fill(0);
+        let gTotals = new Array(numSamples).fill(0);
+        let bTotals = new Array(numSamples).fill(0);
         let frameCount = 0;
-        const maxFrames = 10; // Adjust for smoother transitions
-
+        const maxFrames = 10; // For smoothing
+    
+        const sectionGlows = document.querySelectorAll('.section-glow');
+    
         video.addEventListener('play', function() {
             canvas.width = video.videoWidth;
             canvas.height = 1; // Only need one row of pixels
-
+    
             function updateGlow() {
                 if (video.paused || video.ended) return;
-
+    
                 try {
                     context.drawImage(video, 0, video.videoHeight - 1, video.videoWidth, 1, 0, 0, canvas.width, canvas.height);
                     const frame = context.getImageData(0, 0, canvas.width, 1);
                     const data = frame.data;
-
-                    // Average the colors across the bottom line
-                    let r = 0, g = 0, b = 0;
-                    const length = data.length / 4;
-
-                    for (let i = 0; i < data.length; i += 4) {
-                        r += data[i];
-                        g += data[i + 1];
-                        b += data[i + 2];
+    
+                    const sampleInterval = (canvas.width - 1) / (numSamples - 1);
+    
+                    for (let i = 0; i < numSamples; i++) {
+                        const x = Math.floor(i * sampleInterval);
+                        const index = x * 4;
+                        const r = data[index];
+                        const g = data[index + 1];
+                        const b = data[index + 2];
+    
+                        rTotals[i] += r;
+                        gTotals[i] += g;
+                        bTotals[i] += b;
                     }
-
-                    r = Math.round(r / length);
-                    g = Math.round(g / length);
-                    b = Math.round(b / length);
-
-                    // Update moving average
-                    rTotal += r;
-                    gTotal += g;
-                    bTotal += b;
+    
                     frameCount++;
-
+    
                     if (frameCount >= maxFrames) {
-                        const avgR = Math.round(rTotal / frameCount);
-                        const avgG = Math.round(gTotal / frameCount);
-                        const avgB = Math.round(bTotal / frameCount);
-
-                        const rgbColor = `rgba(${avgR}, ${avgG}, ${avgB}, 0.8)`; // Added alpha for better blending
-
-                        // Set CSS variable for glow color
-                        document.documentElement.style.setProperty('--glow-color', rgbColor);
-
-                        // Reset totals
-                        rTotal = 0;
-                        gTotal = 0;
-                        bTotal = 0;
+                        let gradientStrings = [];
+                        for (let i = 0; i < numSamples; i++) {
+                            const avgR = Math.round(rTotals[i] / frameCount);
+                            const avgG = Math.round(gTotals[i] / frameCount);
+                            const avgB = Math.round(bTotals[i] / frameCount);
+    
+                            const brightness = (avgR + avgG + avgB) / 3;
+    
+                            const minSize = 50; // pixels
+                            const maxSize = 150; // pixels
+                            const size = minSize + (maxSize - minSize) * (brightness / 255);
+    
+                            const color = `rgba(${avgR}, ${avgG}, ${avgB}, 0.6)`;
+    
+                            const xPercent = (i * sampleInterval) / canvas.width * 100;
+    
+                            const positionX = `${xPercent}%`;
+                            const positionY = `0%`;
+    
+                            const gradientString = `radial-gradient(circle at ${positionX} ${positionY}, ${color} 0%, transparent ${size}px)`;
+    
+                            gradientStrings.push(gradientString);
+    
+                            // Reset totals for next batch
+                            rTotals[i] = 0;
+                            gTotals[i] = 0;
+                            bTotals[i] = 0;
+                        }
+    
+                        const backgroundImage = gradientStrings.join(', ');
+    
+                        sectionGlows.forEach(glow => {
+                            glow.style.backgroundImage = backgroundImage;
+                        });
+    
+                        // Reset frameCount
                         frameCount = 0;
                     }
-
+    
                 } catch (e) {
                     console.error('Error accessing video frame for dynamic glow:', e);
                 }
-
+    
                 // Update again on the next animation frame
                 requestAnimationFrame(updateGlow);
             }
-
+    
             // Start updating the glow effect
             updateGlow();
         });
     </script>
+    
 </body>
 </html>
