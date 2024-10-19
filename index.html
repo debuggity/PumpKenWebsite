@@ -184,6 +184,33 @@
             color: #fad2fa;
         }
 
+        .color-glow {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 300px;
+            pointer-events: none;
+            /* Updated gradient style for smoother effect */
+            background: linear-gradient(to bottom, 
+                rgba(0,0,0,0) 0%,
+                var(--glow-color, rgba(255,117,24,0.3)) 100%
+            );
+            z-index: 2; /* Changed to be above video but below content */
+        }
+
+        /* Add new style for the analyzer canvas */
+        #colorAnalyzer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .overlay-text {
@@ -208,6 +235,7 @@
             Your browser does not support the video tag.
         </video>
         <div class="color-glow"></div>
+        <canvas id="colorAnalyzer"></canvas>
         <div class="overlay-text" id="overlayText">$PumpKen</div>
     </header>
 
@@ -259,7 +287,7 @@
     </section>
 
     <footer>
-        &copy; 2023 PumpKen on Solana. All rights reserved.
+        &copy; PumpKen on Solana.
     </footer>
 
     <script>
@@ -289,74 +317,83 @@
         });
 
         // Dynamic Glow Effect Based on Video Colors
-        const video = document.getElementById('headerVideo');
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-
-        // Variables for moving average
-        let rTotal = 0, gTotal = 0, bTotal = 0;
-        let frameCount = 0;
-        const maxFrames = 10; // Adjust for smoother transitions
-
-        video.addEventListener('play', function() {
-            canvas.width = video.videoWidth;
-            canvas.height = 1; // Only need one row of pixels
-
-            function updateGlow() {
-                if (video.paused || video.ended) return;
-
-                try {
-                    context.drawImage(video, 0, video.videoHeight - 1, video.videoWidth, 1, 0, 0, canvas.width, canvas.height);
-                    const frame = context.getImageData(0, 0, canvas.width, 1);
-                    const data = frame.data;
-
-                    // Average the colors across the bottom line
-                    let r = 0, g = 0, b = 0;
-                    const length = data.length / 4;
-
-                    for (let i = 0; i < data.length; i += 4) {
-                        r += data[i];
-                        g += data[i + 1];
-                        b += data[i + 2];
-                    }
-
-                    r = Math.round(r / length);
-                    g = Math.round(g / length);
-                    b = Math.round(b / length);
-
-                    // Update moving average
-                    rTotal += r;
-                    gTotal += g;
-                    bTotal += b;
-                    frameCount++;
-
-                    if (frameCount >= maxFrames) {
-                        const avgR = Math.round(rTotal / frameCount);
-                        const avgG = Math.round(gTotal / frameCount);
-                        const avgB = Math.round(bTotal / frameCount);
-
-                        const rgbColor = `rgba(${avgR}, ${avgG}, ${avgB}, 0.8)`; // Added alpha for better blending
-
-                        // Set CSS variable for glow color
-                        document.documentElement.style.setProperty('--glow-color', rgbColor);
-
-                        // Reset totals
-                        rTotal = 0;
-                        gTotal = 0;
-                        bTotal = 0;
-                        frameCount = 0;
-                    }
-
-                } catch (e) {
-                    console.error('Error accessing video frame for dynamic glow:', e);
-                }
-
-                // Update again on the next animation frame
-                requestAnimationFrame(updateGlow);
+        // Replace the old glow effect code with this improved version
+        document.addEventListener('DOMContentLoaded', () => {
+            const video = document.getElementById('headerVideo');
+            const analyzer = document.getElementById('colorAnalyzer');
+            const ctx = analyzer.getContext('2d', { willReadFrequently: true });
+            
+            // Configure for better performance
+            analyzer.width = 32; // Reduced size for better performance
+            analyzer.height = 1;
+            
+            let lastUpdate = 0;
+            const updateInterval = 100; // Update every 100ms
+            
+            // Color smoothing
+            let currentColors = { r: 0, g: 0, b: 0 };
+            const smoothingFactor = 0.1;
+            
+            function smoothColor(current, target) {
+                return current + (target - current) * smoothingFactor;
             }
-
-            // Start updating the glow effect
-            updateGlow();
+            
+            function analyzeFrame(timestamp) {
+                if (video.paused || video.ended) return;
+                
+                // Throttle updates
+                if (timestamp - lastUpdate < updateInterval) {
+                    requestAnimationFrame(analyzeFrame);
+                    return;
+                }
+                
+                try {
+                    // Draw the bottom portion of the video
+                    ctx.drawImage(
+                        video,
+                        0, video.videoHeight - 1,
+                        video.videoWidth, 1,
+                        0, 0,
+                        analyzer.width, 1
+                    );
+                    
+                    // Get pixel data
+                    const pixels = ctx.getImageData(0, 0, analyzer.width, 1).data;
+                    let r = 0, g = 0, b = 0;
+                    
+                    // Average colors
+                    for (let i = 0; i < pixels.length; i += 4) {
+                        r += pixels[i];
+                        g += pixels[i + 1];
+                        b += pixels[i + 2];
+                    }
+                    
+                    const pixelCount = pixels.length / 4;
+                    r = r / pixelCount;
+                    g = g / pixelCount;
+                    b = b / pixelCount;
+                    
+                    // Smooth the transition
+                    currentColors.r = smoothColor(currentColors.r, r);
+                    currentColors.g = smoothColor(currentColors.g, g);
+                    currentColors.b = smoothColor(currentColors.b, b);
+                    
+                    // Update the glow color with smoothed values and increased opacity
+                    const glowColor = `rgba(${Math.round(currentColors.r)}, ${Math.round(currentColors.g)}, ${Math.round(currentColors.b)}, 0.5)`;
+                    document.documentElement.style.setProperty('--glow-color', glowColor);
+                    
+                    lastUpdate = timestamp;
+                } catch (e) {
+                    console.error('Error analyzing video frame:', e);
+                }
+                
+                requestAnimationFrame(analyzeFrame);
+            }
+            
+            // Start analysis when video is playing
+            video.addEventListener('play', () => {
+                requestAnimationFrame(analyzeFrame);
+            });
         });
     </script>
 </body>
