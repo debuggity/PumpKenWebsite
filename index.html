@@ -70,6 +70,18 @@
             object-fit: cover;
         }
 
+        /* Gradient Overlay */
+        .color-glow {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 150px; /* Adjust the height as needed */
+            pointer-events: none;
+            background: linear-gradient(to bottom, transparent, var(--glow-color, rgba(0,0,0,0)));
+            transition: background 1s ease;
+        }
+
         /* Overlay Text */
         .overlay-text {
             position: absolute;
@@ -87,12 +99,11 @@
             color: rgba(255, 117, 24, 1);
         }
 
-        /* Sections with Dynamic Background */
-        section.dynamic-background {
+        /* Sections */
+        section {
             padding: 100px 20px;
-            background: linear-gradient(to bottom, var(--dynamic-color, rgba(0, 0, 0, 0.5)), rgba(0, 0, 0, 0.8));
+            background: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(5px);
-            transition: background 0.5s ease;
         }
 
         .content {
@@ -182,10 +193,11 @@
             Your browser does not support the video tag.
         </video>
         <div class="overlay-text" id="overlayText">$PumpKen</div>
+        <div class="color-glow"></div>
     </header>
 
     <!-- Welcome Section -->
-    <section class="dynamic-background">
+    <section>
         <div class="content" id="content1">
             <h1>Welcome to PumpKen on Solana</h1>
             <img src="doit.jpg" alt="Do It" class="image-content">
@@ -199,7 +211,7 @@
     </section>
 
     <!-- Why PumpKen Section -->
-    <section class="dynamic-background">
+    <section>
         <div class="content" id="content2">
             <h2>Why PumpKen?</h2>
             <div class="content-video">
@@ -218,7 +230,7 @@
     </section>
 
     <!-- Join the Harvest Section -->
-    <section class="dynamic-background">
+    <section>
         <div class="content" id="content3">
             <h2>Join the Harvest</h2>
             <img src="its-time.jpg" alt="It's Time" class="image-content">
@@ -261,16 +273,24 @@
             });
         });
 
-        // Dynamic Background Based on Video Colors
+        // Dynamic Glow Effect Based on Video Colors
         const video = document.getElementById('headerVideo');
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
+        const glowElement = document.querySelector('.color-glow');
 
-        video.addEventListener('loadedmetadata', function() {
+        // Variables for moving average
+        let rTotal = 0, gTotal = 0, bTotal = 0;
+        let frameCount = 0;
+        const maxFrames = 10; // Adjust for smoother transitions
+
+        video.addEventListener('play', function() {
             canvas.width = video.videoWidth;
             canvas.height = 1; // Only need one row of pixels
 
-            function updateBackground() {
+            function updateGlow() {
+                if (video.paused || video.ended) return;
+
                 try {
                     context.drawImage(video, 0, video.videoHeight - 1, video.videoWidth, 1, 0, 0, canvas.width, canvas.height);
                     const frame = context.getImageData(0, 0, canvas.width, 1);
@@ -290,20 +310,39 @@
                     g = Math.round(g / length);
                     b = Math.round(b / length);
 
-                    const rgbColor = `rgb(${r}, ${g}, ${b})`;
+                    // Update moving average
+                    rTotal += r;
+                    gTotal += g;
+                    bTotal += b;
+                    frameCount++;
 
-                    // Set CSS variable for dynamic color
-                    document.documentElement.style.setProperty('--dynamic-color', rgbColor);
+                    if (frameCount >= maxFrames) {
+                        const avgR = Math.round(rTotal / frameCount);
+                        const avgG = Math.round(gTotal / frameCount);
+                        const avgB = Math.round(bTotal / frameCount);
+
+                        const rgbColor = `rgb(${avgR}, ${avgG}, ${avgB})`;
+
+                        // Set CSS variable for glow color
+                        document.documentElement.style.setProperty('--glow-color', rgbColor);
+
+                        // Reset totals
+                        rTotal = 0;
+                        gTotal = 0;
+                        bTotal = 0;
+                        frameCount = 0;
+                    }
+
                 } catch (e) {
-                    console.error('Error accessing video frame for dynamic background:', e);
+                    console.error('Error accessing video frame for dynamic glow:', e);
                 }
 
                 // Update again on the next animation frame
-                requestAnimationFrame(updateBackground);
+                requestAnimationFrame(updateGlow);
             }
 
-            // Start updating the background
-            updateBackground();
+            // Start updating the glow effect
+            updateGlow();
         });
     </script>
 </body>
