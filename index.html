@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PumpKen on Solana</title>
+    <style>
+        /* Basic Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Body Styles */
+        body {
+            overflow-x: hidden;
+            background: #12064b;
+            color: #fad2fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        /* Bokeh Background */
+        .bokeh {
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            z-index: -2;
+            background: radial-gradient(circle at 10% 20%, #e858ec 20%, transparent 60%),
+                        radial-gradient(circle at 80% 80%, #ff7733 20%, transparent 60%),
+                        radial-gradient(circle at 40% 70%, #5018a0 20%, transparent 60%),
+                        radial-gradient(circle at 60% 20%, #fad2fa 20%, transparent 60%),
+                        radial-gradient(circle at 30% 40%, #ff4500 20%, transparent 60%),
+                        radial-gradient(circle at 70% 50%, #4b1071 20%, transparent 60%),
+                        radial-gradient(circle at 50% 50%, #ff8c00 20%, transparent 60%),
+                        radial-gradient(circle at 90% 10%, #4f4051 20%, transparent 60%),
+                        radial-gradient(circle at 20% 60%, #7c7494 20%, transparent 60%);
+            background-size: 100% 100%;
+            animation: moveBokeh 30s infinite alternate;
+        }
+
+        @keyframes moveBokeh {
+            0% {
+                transform: translate(0, 0);
+            }
+            100% {
+                transform: translate(-25%, -25%);
+            }
+        }
+
+        /* Video Header */
+        header {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        header video {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            transform: translate(-50%, -50%);
+            object-fit: cover;
+        }
+
+        /* Overlay Text */
+        .overlay-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 8vw;
+            font-weight: bold;
+            color: rgba(255, 117, 24, 0);
+            text-shadow: 0 0 10px rgba(255, 117, 24, 0.5), 0 0 20px rgba(255, 117, 24, 0.5), 0 0 30px rgba(255, 117, 24, 0.5);
+            transition: color 1s ease-in-out;
+        }
+
+        .overlay-text.visible {
+            color: rgba(255, 117, 24, 1);
+        }
+
+        /* Sections with Dynamic Background */
+        section.dynamic-background {
+            padding: 100px 20px;
+            background: linear-gradient(to bottom, var(--dynamic-color, rgba(0, 0, 0, 0.5)), rgba(0, 0, 0, 0.8));
+            backdrop-filter: blur(5px);
+            transition: background 0.5s ease;
+        }
+
+        .content {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(50px);
+            transition: opacity 1s ease-out, transform 1s ease-out;
+        }
+
+        .content.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .content h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            color: #ff7518;
+            text-shadow: 0 0 10px rgba(255, 117, 24, 0.7);
+        }
+
+        .content h2 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #ffb347;
+            text-shadow: 0 0 10px rgba(255, 179, 71, 0.7);
+        }
+
+        .content p {
+            font-size: 1.2em;
+            line-height: 1.6;
+        }
+
+        /* Image Styling */
+        .image-content {
+            max-width: 100%;
+            height: auto;
+            margin: 40px 0;
+            box-shadow: 0 0 20px rgba(255, 117, 24, 0.7);
+            border-radius: 10px;
+        }
+
+        /* Video Styling in Content */
+        .content-video {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin: 40px auto;
+            overflow: hidden;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(255, 117, 24, 0.7);
+        }
+
+        .content-video video {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Footer */
+        footer {
+            padding: 50px 20px;
+            text-align: center;
+            background: #040423;
+            color: #fad2fa;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .overlay-text {
+                font-size: 12vw;
+            }
+            .content h1, .content h2 {
+                font-size: 2.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bokeh"></div>
+
+    <header>
+        <video id="headerVideo" autoplay muted loop playsinline>
+            <source src="08.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        <div class="overlay-text" id="overlayText">$PumpKen</div>
+    </header>
+
+    <!-- Welcome Section -->
+    <section class="dynamic-background">
+        <div class="content" id="content1">
+            <h1>Welcome to PumpKen on Solana</h1>
+            <img src="doit.jpg" alt="Do It" class="image-content">
+            <p>
+                Dive into the fall season with <strong>PumpKen</strong>, the meme coin that captures the spirit of autumn on the Solana blockchain. Just like the pumpkins that adorn every doorstep, PumpKen brings warmth and excitement to the crypto community.
+            </p>
+            <p>
+                Join us in carving out a niche in the world of decentralized finance, where every token is a seed for growth and prosperity. Let's make this fall unforgettable together!
+            </p>
+        </div>
+    </section>
+
+    <!-- Why PumpKen Section -->
+    <section class="dynamic-background">
+        <div class="content" id="content2">
+            <h2>Why PumpKen?</h2>
+            <div class="content-video">
+                <video autoplay muted loop playsinline>
+                    <source src="pumpkin-time.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+            <p>
+                PumpKen isn't just another coin; it's a celebration of the season. With its pumpkin-inspired theme and community-driven approach, we're bringing fun and innovation together.
+            </p>
+            <p>
+                Our token embodies the essence of autumn—abundance, festivity, and warmth. Be a part of a project that's as robust and vibrant as a ripe pumpkin in the harvest.
+            </p>
+        </div>
+    </section>
+
+    <!-- Join the Harvest Section -->
+    <section class="dynamic-background">
+        <div class="content" id="content3">
+            <h2>Join the Harvest</h2>
+            <img src="its-time.jpg" alt="It's Time" class="image-content">
+            <p>
+                Be part of our growing pumpkin patch. Whether you're here for the memes, the technology, or the seasonal festivities, there's a place for you in the PumpKen community.
+            </p>
+            <p>
+                Plant your seeds now and watch them grow. Together, we'll create a bountiful harvest that's ripe for the picking!
+            </p>
+        </div>
+    </section>
+
+    <footer>
+        &copy; 2023 PumpKen on Solana. All rights reserved.
+    </footer>
+
+    <script>
+        // Fade in overlay text when scrolled over video
+        window.addEventListener('scroll', () => {
+            const overlayText = document.getElementById('overlayText');
+            const header = document.querySelector('header');
+            const headerHeight = header.offsetHeight;
+            const scrollY = window.scrollY;
+
+            if (scrollY > headerHeight * 0.3) {
+                overlayText.classList.add('visible');
+            } else {
+                overlayText.classList.remove('visible');
+            }
+
+            // Fade in content sections
+            const contents = document.querySelectorAll('.content');
+            contents.forEach(content => {
+                const contentPosition = content.getBoundingClientRect().top;
+                const screenPosition = window.innerHeight / 1.3;
+
+                if (contentPosition < screenPosition) {
+                    content.classList.add('visible');
+                }
+            });
+        });
+
+        // Dynamic Background Based on Video Colors
+        const video = document.getElementById('headerVideo');
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+
+        video.addEventListener('loadedmetadata', function() {
+            canvas.width = video.videoWidth;
+            canvas.height = 1; // Only need one row of pixels
+
+            function updateBackground() {
+                try {
+                    context.drawImage(video, 0, video.videoHeight - 1, video.videoWidth, 1, 0, 0, canvas.width, canvas.height);
+                    const frame = context.getImageData(0, 0, canvas.width, 1);
+                    const data = frame.data;
+
+                    // Average the colors across the bottom line
+                    let r = 0, g = 0, b = 0;
+                    const length = data.length / 4;
+
+                    for (let i = 0; i < data.length; i += 4) {
+                        r += data[i];
+                        g += data[i + 1];
+                        b += data[i + 2];
+                    }
+
+                    r = Math.round(r / length);
+                    g = Math.round(g / length);
+                    b = Math.round(b / length);
+
+                    const rgbColor = `rgb(${r}, ${g}, ${b})`;
+
+                    // Set CSS variable for dynamic color
+                    document.documentElement.style.setProperty('--dynamic-color', rgbColor);
+                } catch (e) {
+                    console.error('Error accessing video frame for dynamic background:', e);
+                }
+
+                // Update again on the next animation frame
+                requestAnimationFrame(updateBackground);
+            }
+
+            // Start updating the background
+            updateBackground();
+        });
+    </script>
+</body>
+</html>
