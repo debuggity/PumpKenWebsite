@@ -50,12 +50,47 @@
             }
         }
 
-        /* Video Header */
+        /* Updated header positioning to work with the glow */
         header {
             position: relative;
             width: 100%;
             height: 100vh;
-            overflow: hidden;
+            overflow: visible; /* Changed from hidden to allow glow to extend below */
+            z-index: 1; /* Ensure header has a z-index context */
+        }
+
+        /* Updated color-glow positioning and gradient */
+        .color-glow {
+            position: absolute;
+            top: 100%; /* Position it right at the bottom of the header */
+            left: 0;
+            width: 100%;
+            height: 300px; /* Height of the glow effect */
+            pointer-events: none;
+            background: linear-gradient(to bottom,
+                var(--glow-color, rgba(255,117,24,0.5)) 0%,
+                rgba(0,0,0,0) 100%
+            );
+            z-index: 0; /* Put it below the content */
+        }
+
+        /* Adjust the first section to work with the glow */
+        section:first-of-type {
+            position: relative;
+            margin-top: -150px; /* Pull the content up into the glow */
+            padding-top: 150px; /* Add padding to compensate */
+            z-index: 1; /* Keep content above the glow */
+        }
+
+        /* Keep your analyzer canvas */
+        #colorAnalyzer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
         }
 
         header video {
@@ -69,19 +104,6 @@
             transform: translate(-50%, -50%);
             object-fit: cover;
             z-index: 1;
-        }
-
-        /* Gradient Glow */
-        .color-glow {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 300px; /* Increased height to extend into content */
-            pointer-events: none;
-            background: linear-gradient(to bottom, rgba(0,0,0,0), var(--glow-color, rgba(0,0,0,0)));
-            transition: background 1s ease;
-            z-index: 0; /* Behind content */
         }
 
         /* Overlay Text */
@@ -182,33 +204,6 @@
             text-align: center;
             background: #040423;
             color: #fad2fa;
-        }
-
-        .color-glow {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 300px;
-            pointer-events: none;
-            /* Updated gradient style for smoother effect */
-            background: linear-gradient(to bottom, 
-                rgba(0,0,0,0) 0%,
-                var(--glow-color, rgba(255,117,24,0.3)) 100%
-            );
-            z-index: 2; /* Changed to be above video but below content */
-        }
-
-        /* Add new style for the analyzer canvas */
-        #colorAnalyzer {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 1px;
-            opacity: 0;
-            pointer-events: none;
-            z-index: 1;
         }
 
         /* Responsive Design */
@@ -316,21 +311,18 @@
             });
         });
 
-        // Dynamic Glow Effect Based on Video Colors
-        // Replace the old glow effect code with this improved version
+        // Updated color analysis code
         document.addEventListener('DOMContentLoaded', () => {
             const video = document.getElementById('headerVideo');
             const analyzer = document.getElementById('colorAnalyzer');
             const ctx = analyzer.getContext('2d', { willReadFrequently: true });
             
-            // Configure for better performance
-            analyzer.width = 32; // Reduced size for better performance
+            analyzer.width = 32;
             analyzer.height = 1;
             
             let lastUpdate = 0;
-            const updateInterval = 100; // Update every 100ms
+            const updateInterval = 100;
             
-            // Color smoothing
             let currentColors = { r: 0, g: 0, b: 0 };
             const smoothingFactor = 0.1;
             
@@ -341,14 +333,12 @@
             function analyzeFrame(timestamp) {
                 if (video.paused || video.ended) return;
                 
-                // Throttle updates
                 if (timestamp - lastUpdate < updateInterval) {
                     requestAnimationFrame(analyzeFrame);
                     return;
                 }
                 
                 try {
-                    // Draw the bottom portion of the video
                     ctx.drawImage(
                         video,
                         0, video.videoHeight - 1,
@@ -357,11 +347,9 @@
                         analyzer.width, 1
                     );
                     
-                    // Get pixel data
                     const pixels = ctx.getImageData(0, 0, analyzer.width, 1).data;
                     let r = 0, g = 0, b = 0;
                     
-                    // Average colors
                     for (let i = 0; i < pixels.length; i += 4) {
                         r += pixels[i];
                         g += pixels[i + 1];
@@ -373,13 +361,12 @@
                     g = g / pixelCount;
                     b = b / pixelCount;
                     
-                    // Smooth the transition
                     currentColors.r = smoothColor(currentColors.r, r);
                     currentColors.g = smoothColor(currentColors.g, g);
                     currentColors.b = smoothColor(currentColors.b, b);
                     
-                    // Update the glow color with smoothed values and increased opacity
-                    const glowColor = `rgba(${Math.round(currentColors.r)}, ${Math.round(currentColors.g)}, ${Math.round(currentColors.b)}, 0.5)`;
+                    // Increased initial opacity for stronger glow effect
+                    const glowColor = `rgba(${Math.round(currentColors.r)}, ${Math.round(currentColors.g)}, ${Math.round(currentColors.b)}, 0.7)`;
                     document.documentElement.style.setProperty('--glow-color', glowColor);
                     
                     lastUpdate = timestamp;
@@ -390,7 +377,6 @@
                 requestAnimationFrame(analyzeFrame);
             }
             
-            // Start analysis when video is playing
             video.addEventListener('play', () => {
                 requestAnimationFrame(analyzeFrame);
             });
